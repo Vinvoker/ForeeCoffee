@@ -21,6 +21,10 @@ func main() {
 	router.POST("/cron", controllers.ActivateCRON)
 	router.POST("/email", controllers.SendEmail)
 
+	// PRODUCTS
+	router.GET("/products", controllers.GetAllProducts) // autentikasi : admin, customer
+	router.POST("/product", controllers.InsertProduct)  // autentikasi : admin
+
 	if err := router.Run(":" + port); err != nil {
 		panic(err)
 	}
