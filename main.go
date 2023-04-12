@@ -27,6 +27,9 @@ func main() {
 	router.PUT("/product", controllers.UpdateProduct)    // autentikasi : admin
 	router.DELETE("/product", controllers.DeleteProduct) // autentikasi : admin
 
+	//ORDERS
+	router.POST("/order", controllers.InsertOrder) // autentikasi : customer
+
 	if err := router.Run(":" + port); err != nil {
 		panic(err)
 	}
