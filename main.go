@@ -22,12 +22,15 @@ func main() {
 	router.POST("/email", controllers.SendEmail)
 
 	// PRODUCTS
-	router.GET("/products", controllers.GetAllProducts)  // autentikasi : admin, customer
-	router.POST("/product", controllers.InsertProduct)   // autentikasi : admin
-	router.PUT("/product", controllers.UpdateProduct)    // autentikasi : admin
-	router.DELETE("/product", controllers.DeleteProduct) // autentikasi : admin
+	router.GET("/products", controllers.GetAllProducts)                 // autentikasi : admin, customer
+	router.GET("/products-coffee", controllers.GetProductsCoffee)       // autentikasi : admin, customer  // tidak ada input
+	router.GET("/products-noncoffee", controllers.GetProductsNonCoffee) // autentikasi : admin, customer  // tidak ada input
+	router.GET("/product", controllers.GetProduct)                      // autentikasi : admin, customer  // input : nama product
+	router.POST("/product", controllers.InsertProduct)                  // autentikasi : admin
+	router.PUT("/product", controllers.UpdateProduct)                   // autentikasi : admin
+	router.DELETE("/product", controllers.DeleteProduct)                // autentikasi : admin
 
-	//ORDERS
+	// ORDERS
 	router.POST("/order", controllers.InsertOrder) // autentikasi : customer
 
 	if err := router.Run(":" + port); err != nil {

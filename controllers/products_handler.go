@@ -8,6 +8,18 @@ func GetAllProducts(c *gin.Context) {
 
 }
 
+func GetProductsCoffee(c *gin.Context) {
+
+}
+
+func GetProductsNonCoffee(c *gin.Context) {
+
+}
+
+func GetProduct(c *gin.Context) {
+
+}
+
 func InsertProduct(c *gin.Context) {
 
 }
