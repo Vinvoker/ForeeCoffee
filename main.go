@@ -22,8 +22,10 @@ func main() {
 	router.POST("/email", controllers.SendEmail)
 
 	// PRODUCTS
-	router.GET("/products", controllers.GetAllProducts) // autentikasi : admin, customer
-	router.POST("/product", controllers.InsertProduct)  // autentikasi : admin
+	router.GET("/products", controllers.GetAllProducts)  // autentikasi : admin, customer
+	router.POST("/product", controllers.InsertProduct)   // autentikasi : admin
+	router.PUT("/product", controllers.UpdateProduct)    // autentikasi : admin
+	router.DELETE("/product", controllers.DeleteProduct) // autentikasi : admin
 
 	if err := router.Run(":" + port); err != nil {
 		panic(err)
