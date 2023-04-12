@@ -21,6 +21,11 @@ func main() {
 	router.POST("/cron", controllers.ActivateCRON)
 	router.POST("/email", controllers.SendEmail)
 
+	// LOGIN
+	router.POST("/login", controllers.Login)
+	router.GET("/logout", controllers.Logout)
+	router.POST("/signup", controllers.Signup)
+
 	// PRODUCTS
 	router.GET("/products", controllers.GetAllProducts)                 // autentikasi : admin, customer
 	router.GET("/products-coffee", controllers.GetProductsCoffee)       // autentikasi : admin, customer  // tidak ada input
