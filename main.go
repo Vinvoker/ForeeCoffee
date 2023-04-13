@@ -18,8 +18,12 @@ func main() {
 
 	port := os.Getenv("ROUTER_PORT")
 
-	router.POST("/cron", controllers.ActivateCRON)
-	router.POST("/email", controllers.SendEmail)
+	// EMAIL
+	router.POST("/cron", controllers.AuthMiddleware("ADMIN"), controllers.ActivateCRON)
+	router.POST("/email", controllers.AuthMiddleware("ADMIN"), controllers.SendEmail)
+
+	// ORDERS
+	router.POST("/order", controllers.AuthMiddleware("CUSTOMER"), controllers.InsertOrder)
 
 	// LOGIN
 	router.POST("/login", controllers.Login)
@@ -27,16 +31,15 @@ func main() {
 	router.POST("/signup", controllers.Signup)
 
 	// PRODUCTS
-	router.GET("/products", controllers.GetAllProducts)                 // autentikasi : admin, customer
-	router.GET("/products-coffee", controllers.GetProductsCoffee)       // autentikasi : admin, customer  // tidak ada input
-	router.GET("/products-noncoffee", controllers.GetProductsNonCoffee) // autentikasi : admin, customer  // tidak ada input
-	router.GET("/product", controllers.GetProduct)                      // autentikasi : admin, customer  // input : nama product
-	router.POST("/product", controllers.InsertProduct)                  // autentikasi : admin
-	router.PUT("/product", controllers.UpdateProduct)                   // autentikasi : admin
-	router.DELETE("/product", controllers.DeleteProduct)                // autentikasi : admin
+	productsRoutes := router.Group("/products")
+	productsRoutes.GET("", controllers.AuthMiddleware("ADMIN", "CUSTOMER"), controllers.GetAllProducts)
+	productsRoutes.GET("/:name", controllers.AuthMiddleware("ADMIN", "CUSTOMER"), controllers.GetProduct)
+	productsRoutes.GET("/coffee", controllers.AuthMiddleware("ADMIN", "CUSTOMER"), controllers.GetProductsCoffee)
+	productsRoutes.GET("/noncoffee", controllers.AuthMiddleware("ADMIN", "CUSTOMER"), controllers.GetProductsNonCoffee)
 
-	// ORDERS
-	router.POST("/order", controllers.InsertOrder) // autentikasi : customer
+	productsRoutes.POST("", controllers.AuthMiddleware("ADMIN"), controllers.InsertProduct)
+	productsRoutes.PUT("", controllers.AuthMiddleware("ADMIN"), controllers.UpdateProduct)
+	productsRoutes.DELETE("", controllers.AuthMiddleware("ADMIN"), controllers.DeleteProduct)
 
 	if err := router.Run(":" + port); err != nil {
 		panic(err)

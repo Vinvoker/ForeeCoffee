@@ -1,57 +1,51 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
-var jwtKey = []byte("ContohJWTKey123")
-var tokenName = "token"
+func generateToken(c *gin.Context, id int, name string, role string) {
+	cookieName := os.Getenv("COOKIE_NAME")
+	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
 
-type Claims struct {
-	ID       int    `json:id`
-	Name     string `json:name`
-	UserType int    `json:user_type`
-	jwt.StandardClaims
-}
-
-func generateToken(w http.ResponseWriter, id int, name string, userType int) {
-	tokenExpiryTime := time.Now().Add(5 * time.Minute)
-
-	// create claims with user data
-	claims := &Claims{
+	expiryTime := time.Now().Add(time.Hour * 24)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &CustomClaims{
 		ID:       id,
-		Name:     name,
-		UserType: userType,
+		Username: name,
+		Role:     role,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: tokenExpiryTime.Unix(),
+			ExpiresAt: expiryTime.Unix(),
 		},
-	}
+	})
 
-	// encrypt claim to jwt token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	// jwtKey := os.Getenv("JWT_TOKEN")
-	jwtToken, err := token.SignedString(jwtKey)
+	tokenString, err := token.SignedString([]byte(jwtSecretKey))
 	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	// set token to cookies
-	http.SetCookie(w, &http.Cookie{
-		Name:     tokenName,
-		Value:    jwtToken,
-		Expires:  tokenExpiryTime,
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     cookieName,
+		Value:    tokenString,
+		Expires:  expiryTime,
 		Secure:   false,
 		HttpOnly: true,
 	})
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+	})
 }
 
-func resetUserToken(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     tokenName,
+func resetUserToken(c *gin.Context) {
+	cookieName := os.Getenv("COOKIE_NAME")
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     cookieName,
 		Value:    "",
 		Expires:  time.Now(),
 		Secure:   false,
@@ -59,42 +53,45 @@ func resetUserToken(w http.ResponseWriter) {
 	})
 }
 
-func Authenticate(next http.HandlerFunc, accessType int) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		isValidToken := validateUserToken(r, accessType)
-		if !isValidToken {
-			// send error response
-		} else {
-			next.ServeHTTP(w, r)
-		}
-	})
-}
+func AuthMiddleware(roles ...string) gin.HandlerFunc {
+	cookieName := os.Getenv("COOKIE_NAME")
+	return func(c *gin.Context) {
+		if cookie, err := c.Cookie(cookieName); err == nil {
+			if cookie == "" {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
 
-func validateUserToken(r *http.Request, accessType int) bool {
-	isAccessTokenValid, id, name, userType := validateTokenFromCookies(r)
-	fmt.Print(id, name, userType, accessType, isAccessTokenValid)
-
-	if isAccessTokenValid {
-		isUserValid := userType == accessType
-		if isUserValid {
-			return true
-		}
-	}
-	return false
-}
-
-func validateTokenFromCookies(r *http.Request) (bool, int, string, int) {
-	if cookie, err := r.Cookie(tokenName); err == nil {
-		jwtToken := cookie.Value
-		accessClaims := &Claims{}
-		parsedToken, err := jwt.ParseWithClaims(jwtToken,
-			accessClaims, func(accessToken *jwt.Token) (interface{},
-				error) {
-				return jwtKey, nil
+			parsedToken, err := jwt.ParseWithClaims(cookie, &CustomClaims{}, func(accessToken *jwt.Token) (interface{}, error) {
+				return []byte(jwtSecretKey), nil
 			})
-		if err == nil && parsedToken.Valid {
-			return true, accessClaims.ID, accessClaims.Name, accessClaims.UserType
+
+			if err != nil || !parsedToken.Valid {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+
+			claims, ok := parsedToken.Claims.(*CustomClaims)
+			if !ok {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+
+			authorized := false
+			for _, role := range roles {
+				if claims.Role == role {
+					authorized = true
+					break
+				}
+			}
+
+			if !authorized {
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+
+			c.Next()
 		}
 	}
-	return false, -1, "", -1
 }

@@ -1,36 +1,51 @@
 package controllers
 
-type Order struct {
-	IDorder        int `json:"id"`
-	WaktuTransaksi int `json:"waktu_transaksi"`
+import (
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
+)
+
+type CustomClaims struct {
+	ID       int
+	Username string
+	Role     string
+	jwt.StandardClaims
+}
+
+type User struct {
+	ID       int    `json:"id"`
+	Username int    `json:"username"`
+	Role     string `json:"role"`
+}
+
+type Product struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	Price      int    `json:"price"`
+	Category   string `json:"category"`
+	PictureUrl string `json:"picture_url"`
 }
 
 type OrderDetails struct {
-	IDorder  int `json:"id_order"`
-	IDproduk int `json:"id_produk"`
-	Quantity int `json:"quantity"`
+	ID       int
+	Product  Product `json:"product"`
+	Quantity int     `json:"quantity"`
 }
 
-type Produk struct {
-	IDproduk   int    `json:"id_produk"`
-	NamaProduk string `json:"nama_produk"`
-	Harga      int    `json:"harga"`
-	Gambar     string `json:"gambar"`
+type Order struct {
+	ID              int            `json:"id"`
+	TransactionTime time.Time      `json:"transaction_time"`
+	Details         []OrderDetails `json:"details"`
 }
 
-type DataOwners struct {
-	IDowner    int    `json:"id_owner"`
-	NamaOwner  string `json:"nama_owner"`
-	EmailOwner string `json:"email"`
+type Investor struct {
+	Username string
+	Email    string
 }
 
-type Receiver struct {
-	OwnerName  string `json:"name"`
-	OwnerEmail string `json:"email"`
-}
-
-type Message struct {
-	ProductName string
-	Quantity    int
-	Price       int
+type ProductDetail struct {
+	Name     string
+	Quantity int
+	Price    int
 }
