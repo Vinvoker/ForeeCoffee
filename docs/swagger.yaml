@@ -1,0 +1,12 @@
+basePath: /api/v1
+info:
+  title: Titot
+  version: 6.9.69
+  contact: {}
+paths: {
+  /pet:
+    post:
+      summary: ini untuk post pet
+      description: testing
+}
+swagger: "2.0"
