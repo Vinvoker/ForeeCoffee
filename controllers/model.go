@@ -19,12 +19,25 @@ type User struct {
 	Role     string `json:"role"`
 }
 
+type Branch struct {
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Address string `json:"address"`
+}
+
 type Product struct {
 	ID         int    `json:"id"`
 	Name       string `json:"name"`
 	Price      int    `json:"price"`
 	Category   string `json:"category"`
 	PictureUrl string `json:"picture_url"`
+}
+
+type ProductResponse struct {
+	Status  int       `json:"status"`
+	Message string    `json:"message"`
+	Branch  string    `json:"branch"`
+	Data    []Product `json:"products"`
 }
 
 type OrderDetails struct {
