@@ -33,11 +33,9 @@ type Product struct {
 	PictureUrl string `json:"picture_url"`
 }
 
-type ProductResponse struct {
-	Status  int       `json:"status"`
-	Message string    `json:"message"`
-	Branch  string    `json:"branch"`
-	Data    []Product `json:"products"`
+type BranchProducts struct {
+	Branch string  `json:"branch"`
+	Data   Product `json:"products"`
 }
 
 type OrderDetails struct {
