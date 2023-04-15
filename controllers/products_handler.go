@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetAllProducts(c *gin.Context) {
+func GetAllProductsAndTheirBranches(c *gin.Context) {
 	db := connect()
 	defer db.Close()
 
@@ -32,12 +32,27 @@ func GetAllProducts(c *gin.Context) {
 			// Check if the current product already exists in the products slice
 			// If it does, append the branch to the existing product's Branch slice
 			// If it doesn't, create a new product and append it to the products slice
-			if len(products) > 0 && products[len(products)-1].ID == product.ID {
-				products[len(products)-1].Branch = append(products[len(products)-1].Branch, branch)
-			} else {
+			var productIdFound = false
+			if len(products) > 0 {
+				for i := 0; i < len(products); i++ {
+					if products[i].ID == product.ID {
+						products[i].Branch = append(products[i].Branch, branch)
+						productIdFound = true
+						break
+					}
+				}
+			}
+			if !productIdFound {
 				product.Branch = []Branch{branch}
 				products = append(products, product)
 			}
+
+			// if len(products) > 0 && products[len(products)-1].ID == product.ID {
+			// 	products[len(products)-1].Branch = append(products[len(products)-1].Branch, branch)
+			// } else {
+			// 	product.Branch = []Branch{branch}
+			// 	products = append(products, product)
+			// }
 
 		}
 	}
