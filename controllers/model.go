@@ -33,9 +33,21 @@ type Product struct {
 	PictureUrl string `json:"picture_url"`
 }
 
-type BranchProducts struct {
-	Branch string  `json:"branch"`
-	Data   Product `json:"products"`
+type BranchProductsForMenu struct { // No variable Quantity because customer doesnt need to see it
+	Branch  Branch    `json:"branch"`
+	Product []Product `json:"products"`
+}
+
+type BranchProductForInsert struct {
+	Branch   string  `json:"branch"`
+	Product  Product `json:"products"`
+	Quantity int     `json:"quantity"`
+}
+
+type BranchProduct struct {
+	Branch   Branch  `json:"branch"`
+	Product  Product `json:"products"`
+	Quantity int     `json:"quantity"`
 }
 
 type OrderDetails struct {
