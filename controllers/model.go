@@ -33,6 +33,15 @@ type Product struct {
 	PictureUrl string `json:"picture_url"`
 }
 
+type ProductsDetails struct {
+	ID         int      `json:"id"`
+	Name       string   `json:"name"`
+	Price      int      `json:"price"`
+	Category   string   `json:"category"`
+	PictureUrl string   `json:"picture_url"`
+	Branch     []Branch `json:"branches"`
+}
+
 type BranchProductsForMenu struct { // No variable Quantity because customer doesnt need to see it
 	Branch  Branch    `json:"branch"`
 	Product []Product `json:"products"`
