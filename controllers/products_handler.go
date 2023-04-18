@@ -12,7 +12,12 @@ func GetAllProductsAndTheirBranches(c *gin.Context) {
 	db := connect()
 	defer db.Close()
 
-	rows, err := db.Query("SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address FROM product p JOIN branchproduct bp ON p.id=bp.productId JOIN branches b ON bp.branchId=b.id")
+	query := "SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address " +
+		"FROM product p " +
+		"JOIN branchproduct bp ON p.id=bp.productId " +
+		"JOIN branches b ON bp.branchId=b.id"
+
+	rows, err := db.Query(query)
 	if err != nil {
 		log.Println(err)
 		c.JSON(400, gin.H{"error": "Something has gone wrong with the Product query"})
@@ -23,15 +28,21 @@ func GetAllProductsAndTheirBranches(c *gin.Context) {
 	var product ProductsDetails
 	for rows.Next() {
 		var branch Branch
-		if err := rows.Scan(&product.ID, &product.Name, &product.Price, &product.PictureUrl, &product.Category, &branch.ID, &branch.Name, &branch.Address); err != nil {
+		if err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.PictureUrl,
+			&product.Category,
+			&branch.ID,
+			&branch.Name,
+			&branch.Address,
+		); err != nil {
 			log.Println(err)
 			c.JSON(400, gin.H{"error": "products not found"})
 			return
 		} else {
 
-			// Check if the current product already exists in the products slice
-			// If it does, append the branch to the existing product's Branch slice
-			// If it doesn't, create a new product and append it to the products slice
 			var productIdFound = false
 			if len(products) > 0 {
 				for i := 0; i < len(products); i++ {
@@ -42,21 +53,16 @@ func GetAllProductsAndTheirBranches(c *gin.Context) {
 					}
 				}
 			}
+
 			if !productIdFound {
 				product.Branch = []Branch{branch}
 				products = append(products, product)
 			}
-
-			// if len(products) > 0 && products[len(products)-1].ID == product.ID {
-			// 	products[len(products)-1].Branch = append(products[len(products)-1].Branch, branch)
-			// } else {
-			// 	product.Branch = []Branch{branch}
-			// 	products = append(products, product)
-			// }
-
 		}
 	}
+
 	c.IndentedJSON(http.StatusOK, products)
+
 }
 
 func GetAllProductsByBranch(c *gin.Context) {
@@ -65,9 +71,13 @@ func GetAllProductsByBranch(c *gin.Context) {
 
 	branchName := c.Query("Branch")
 
-	fmt.Print("branchName = ", branchName)
+	query := "SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address " +
+		"FROM product p " +
+		"JOIN branchproduct bp ON p.id=bp.productId " +
+		"JOIN branches b ON bp.branchId=b.id " +
+		"WHERE b.name=?"
 
-	rows, err := db.Query("SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address FROM product p JOIN branchproduct bp ON p.id=bp.productId JOIN branches b ON bp.branchId=b.id WHERE b.name=?", branchName)
+	rows, err := db.Query(query, branchName)
 	if err != nil {
 		log.Println(err)
 		c.JSON(400, gin.H{"error": "Something has gone wrong with the Product query"})
@@ -77,22 +87,29 @@ func GetAllProductsByBranch(c *gin.Context) {
 	var product Product
 	var products []Product
 	var branch Branch
-	var error bool
 	for rows.Next() {
-		if err := rows.Scan(&product.ID, &product.Name, &product.Price, &product.PictureUrl, &product.Category, &branch.ID, &branch.Name, &branch.Address); err != nil {
+		if err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.PictureUrl,
+			&product.Category,
+			&branch.ID,
+			&branch.Name,
+			&branch.Address,
+		); err != nil {
 			log.Println(err)
 			c.JSON(400, gin.H{"error": "products not found"})
+			return
 		} else {
 			products = append(products, product)
 		}
 	}
 
-	if !error {
-		var response BranchProductsForMenu
-		response.Product = products
-		response.Branch = branch
-		c.IndentedJSON(http.StatusOK, response)
-	}
+	var response BranchProductsForMenu
+	response.Product = products
+	response.Branch = branch
+	c.IndentedJSON(http.StatusOK, response)
 }
 
 func GetProductsCoffeeByBranch(c *gin.Context) {
@@ -101,9 +118,13 @@ func GetProductsCoffeeByBranch(c *gin.Context) {
 
 	branchName := c.Query("Branch")
 
-	fmt.Print("branchName = ", branchName)
+	query := "SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address " +
+		"FROM product p " +
+		"JOIN branchproduct bp ON p.id=bp.productId " +
+		"JOIN branches b ON bp.branchId=b.id " +
+		"WHERE b.name=? AND p.category='COFFEE'"
 
-	rows, err := db.Query("SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address FROM product p JOIN branchproduct bp ON p.id=bp.productId JOIN branches b ON bp.branchId=b.id WHERE b.name=? AND p.category='COFFEE'", branchName)
+	rows, err := db.Query(query, branchName)
 	if err != nil {
 		log.Println(err)
 		c.JSON(400, gin.H{"error": "Something has gone wrong with the Product query"})
@@ -113,22 +134,29 @@ func GetProductsCoffeeByBranch(c *gin.Context) {
 	var product Product
 	var products []Product
 	var branch Branch
-	var error bool
 	for rows.Next() {
-		if err := rows.Scan(&product.ID, &product.Name, &product.Price, &product.PictureUrl, &product.Category, &branch.ID, &branch.Name, &branch.Address); err != nil {
+		if err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.PictureUrl,
+			&product.Category,
+			&branch.ID,
+			&branch.Name,
+			&branch.Address,
+		); err != nil {
 			log.Println(err)
 			c.JSON(400, gin.H{"error": "products not found"})
+			return
 		} else {
 			products = append(products, product)
 		}
 	}
 
-	if !error {
-		var response BranchProductsForMenu
-		response.Product = products
-		response.Branch = branch
-		c.IndentedJSON(http.StatusOK, response)
-	}
+	var response BranchProductsForMenu
+	response.Product = products
+	response.Branch = branch
+	c.IndentedJSON(http.StatusOK, response)
 }
 
 func GetProductsYakultByBranch(c *gin.Context) {
@@ -137,9 +165,13 @@ func GetProductsYakultByBranch(c *gin.Context) {
 
 	branchName := c.Query("Branch")
 
-	fmt.Print("branchName = ", branchName)
+	query := "SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address " +
+		"FROM product p " +
+		"JOIN branchproduct bp ON p.id=bp.productId " +
+		"JOIN branches b ON bp.branchId=b.id " +
+		"WHERE b.name=? AND p.category='YAKULT'"
 
-	rows, err := db.Query("SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address FROM product p JOIN branchproduct bp ON p.id=bp.productId JOIN branches b ON bp.branchId=b.id WHERE b.name=? AND p.category='YAKULT'", branchName)
+	rows, err := db.Query(query, branchName)
 	if err != nil {
 		log.Println(err)
 		c.JSON(400, gin.H{"error": "Something has gone wrong with the Product query"})
@@ -149,22 +181,29 @@ func GetProductsYakultByBranch(c *gin.Context) {
 	var product Product
 	var products []Product
 	var branch Branch
-	var error bool
 	for rows.Next() {
-		if err := rows.Scan(&product.ID, &product.Name, &product.Price, &product.PictureUrl, &product.Category, &branch.ID, &branch.Name, &branch.Address); err != nil {
+		if err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.PictureUrl,
+			&product.Category,
+			&branch.ID,
+			&branch.Name,
+			&branch.Address,
+		); err != nil {
 			log.Println(err)
 			c.JSON(400, gin.H{"error": "products not found"})
+			return
 		} else {
 			products = append(products, product)
 		}
 	}
 
-	if !error {
-		var response BranchProductsForMenu
-		response.Product = products
-		response.Branch = branch
-		c.IndentedJSON(http.StatusOK, response)
-	}
+	var response BranchProductsForMenu
+	response.Product = products
+	response.Branch = branch
+	c.IndentedJSON(http.StatusOK, response)
 }
 
 func GetProductsTeaByBranch(c *gin.Context) {
@@ -173,9 +212,13 @@ func GetProductsTeaByBranch(c *gin.Context) {
 
 	branchName := c.Query("Branch")
 
-	fmt.Print("branchName = ", branchName)
+	query := "SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address " +
+		"FROM product p " +
+		"JOIN branchproduct bp ON p.id=bp.productId " +
+		"JOIN branches b ON bp.branchId=b.id " +
+		"WHERE b.name=? AND p.category='TEA'"
 
-	rows, err := db.Query("SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address FROM product p JOIN branchproduct bp ON p.id=bp.productId JOIN branches b ON bp.branchId=b.id WHERE b.name=? AND p.category='TEA'", branchName)
+	rows, err := db.Query(query, branchName)
 	if err != nil {
 		log.Println(err)
 		c.JSON(400, gin.H{"error": "Something has gone wrong with the Product query"})
@@ -185,22 +228,29 @@ func GetProductsTeaByBranch(c *gin.Context) {
 	var product Product
 	var products []Product
 	var branch Branch
-	var error bool
 	for rows.Next() {
-		if err := rows.Scan(&product.ID, &product.Name, &product.Price, &product.PictureUrl, &product.Category, &branch.ID, &branch.Name, &branch.Address); err != nil {
+		if err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.PictureUrl,
+			&product.Category,
+			&branch.ID,
+			&branch.Name,
+			&branch.Address,
+		); err != nil {
 			log.Println(err)
 			c.JSON(400, gin.H{"error": "products not found"})
+			return
 		} else {
 			products = append(products, product)
 		}
 	}
 
-	if !error {
-		var response BranchProductsForMenu
-		response.Product = products
-		response.Branch = branch
-		c.IndentedJSON(http.StatusOK, response)
-	}
+	var response BranchProductsForMenu
+	response.Product = products
+	response.Branch = branch
+	c.IndentedJSON(http.StatusOK, response)
 }
 
 func GetProductByNameAndBranch(c *gin.Context) {
@@ -210,10 +260,13 @@ func GetProductByNameAndBranch(c *gin.Context) {
 	branchName := c.Query("Branch")
 	productName := "%" + c.Query("Name") + "%"
 
-	fmt.Print("branchName = ", branchName)
-	fmt.Print("productName = ", productName)
+	query := "SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address " +
+		"FROM product p " +
+		"JOIN branchproduct bp ON p.id=bp.productId " +
+		"JOIN branches b ON bp.branchId=b.id " +
+		"WHERE b.name=? AND p.name LIKE ?"
 
-	rows, err := db.Query("SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address FROM product p JOIN branchproduct bp ON p.id=bp.productId JOIN branches b ON bp.branchId=b.id WHERE b.name=? AND p.name LIKE ?", branchName, productName)
+	rows, err := db.Query(query, branchName, productName)
 	if err != nil {
 		log.Println(err)
 		c.JSON(400, gin.H{"error": "Something has gone wrong with the Product query"})
@@ -223,22 +276,29 @@ func GetProductByNameAndBranch(c *gin.Context) {
 	var product Product
 	var products []Product
 	var branch Branch
-	var error bool
 	for rows.Next() {
-		if err := rows.Scan(&product.ID, &product.Name, &product.Price, &product.PictureUrl, &product.Category, &branch.ID, &branch.Name, &branch.Address); err != nil {
+		if err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.PictureUrl,
+			&product.Category,
+			&branch.ID,
+			&branch.Name,
+			&branch.Address,
+		); err != nil {
 			log.Println(err)
 			c.JSON(400, gin.H{"error": "products not found"})
+			return
 		} else {
 			products = append(products, product)
 		}
 	}
 
-	if !error {
-		var response BranchProductsForMenu
-		response.Product = products
-		response.Branch = branch
-		c.IndentedJSON(http.StatusOK, response)
-	}
+	var response BranchProductsForMenu
+	response.Product = products
+	response.Branch = branch
+	c.IndentedJSON(http.StatusOK, response)
 }
 
 func InsertProduct(c *gin.Context) {
@@ -247,22 +307,22 @@ func InsertProduct(c *gin.Context) {
 
 	var newProduct BranchProductForInsert
 
-	if err := c.Bind(&newProduct); err != nil {
-		fmt.Print(err)
+	if errBind := c.Bind(&newProduct); errBind != nil {
+		fmt.Print(errBind)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	// INSERT TO PRODUCT TABLE
-	_, err := db.Query("INSERT INTO product (name, price, category, pictureUrl) VALUES (?,?,?,?)",
+	_, errQueryInsertProduct := db.Query("INSERT INTO product (name, price, category, pictureUrl) VALUES (?,?,?,?)",
 		newProduct.Product.Name,
 		newProduct.Product.Price,
 		newProduct.Product.Category,
 		newProduct.Product.PictureUrl,
 	)
 
-	if err != nil {
-		log.Println(err)
+	if errQueryInsertProduct != nil {
+		log.Println(errQueryInsertProduct)
 		c.JSON(400, gin.H{"error": "insert to product table failed"})
 		return
 	}
@@ -271,7 +331,11 @@ func InsertProduct(c *gin.Context) {
 	var branchId int
 	var productId int
 
-	rows, errQueryGetIDs := db.Query("SELECT p.id, b.id FROM product p, branches b WHERE b.name=? AND p.name=?", newProduct.Branch, newProduct.Product.Name)
+	rows, errQueryGetIDs := db.Query("SELECT p.id, b.id FROM product p, branches b WHERE b.name=? AND p.name=?",
+		newProduct.Branch,
+		newProduct.Product.Name,
+	)
+
 	if errQueryGetIDs != nil {
 		log.Println(errQueryGetIDs)
 		c.JSON(400, gin.H{"error": "Something has gone wrong with the Product query"})
@@ -279,7 +343,7 @@ func InsertProduct(c *gin.Context) {
 	}
 
 	for rows.Next() {
-		if errorGetIDs := rows.Scan(&productId, &branchId); err != nil {
+		if errorGetIDs := rows.Scan(&productId, &branchId); errQueryInsertProduct != nil {
 			log.Println(errorGetIDs)
 			c.JSON(400, gin.H{"error": "id product and branch not found"})
 			return
@@ -287,14 +351,14 @@ func InsertProduct(c *gin.Context) {
 	}
 
 	// INSERT TO BRANCH-PRODUCT TABLE
-	_, errInsertBranchProduct := db.Query("INSERT INTO branchproduct (branchId, productId, productQuantity) VALUES (?,?,?)",
+	_, errQueryInsertBranchProduct := db.Query("INSERT INTO branchproduct (branchId, productId, productQuantity) VALUES (?,?,?)",
 		branchId,
 		productId,
 		newProduct.Quantity,
 	)
 
-	if errInsertBranchProduct != nil {
-		log.Println(errInsertBranchProduct)
+	if errQueryInsertBranchProduct != nil {
+		log.Println(errQueryInsertBranchProduct)
 		c.JSON(400, gin.H{"error": "insert to branch-product table failed"})
 		return
 	} else {
