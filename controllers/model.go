@@ -15,7 +15,7 @@ type CustomClaims struct {
 
 type User struct {
 	ID       int    `json:"id"`
-	Username int    `json:"username"`
+	Username string `json:"username"`
 	Role     string `json:"role"`
 }
 
