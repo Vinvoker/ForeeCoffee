@@ -22,6 +22,9 @@ func main() {
 
 	port := os.Getenv("ROUTER_PORT")
 
+	// status order -> ongoing, finished, dll
+	// cek riwayat order per customer
+
 	// EMAIL
 	router.POST("/cron", controllers.AuthMiddleware("ADMIN"), controllers.ActivateCRON)
 	// @BasePath /api/v1
@@ -35,9 +38,12 @@ func main() {
 	// ORDERS
 	router.POST("/order", controllers.AuthMiddleware("CUSTOMER"), controllers.InsertOrder)
 
+	// sebelum order -> pilih cabang
+	// db buat cabang
+
 	// LOGIN
 	router.POST("/login", controllers.Login)
-	router.POST("/logout", controllers.Logout)
+	router.POST("/logout", controllers.Logout) // tambahin auth hrs login dulu baru bisa logout
 	router.POST("/signup", controllers.Signup)
 
 	// PRODUCTS

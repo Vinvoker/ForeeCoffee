@@ -37,6 +37,7 @@ type Order struct {
 	ID              int            `json:"id"`
 	TransactionTime time.Time      `json:"transaction_time"`
 	Details         []OrderDetails `json:"details"`
+	TotalPrice      int            `json:"total_price"`
 }
 
 type Investor struct {
