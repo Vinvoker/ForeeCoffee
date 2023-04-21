@@ -95,3 +95,33 @@ func AuthMiddleware(roles ...string) gin.HandlerFunc {
 		}
 	}
 }
+
+func GetUserId(c *gin.Context) int {
+	cookieName := os.Getenv("COOKIE_NAME")
+	if cookie, err := c.Cookie(cookieName); err == nil {
+		if cookie == "" {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return 0
+		}
+		jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
+
+		parsedToken, err := jwt.ParseWithClaims(cookie, &CustomClaims{}, func(accessToken *jwt.Token) (interface{}, error) {
+			return []byte(jwtSecretKey), nil
+		})
+
+		if err != nil || !parsedToken.Valid {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return 0
+		}
+
+		claims, ok := parsedToken.Claims.(*CustomClaims)
+		if !ok {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return 0
+		}
+
+		return claims.ID
+	} else {
+		return 0
+	}
+}
