@@ -15,8 +15,14 @@ type CustomClaims struct {
 
 type User struct {
 	ID       int    `json:"id"`
-	Username int    `json:"username"`
+	Username string `json:"username"`
 	Role     string `json:"role"`
+}
+
+type Branch struct {
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Address string `json:"address"`
 }
 
 type Product struct {
@@ -27,10 +33,45 @@ type Product struct {
 	PictureUrl string `json:"picture_url"`
 }
 
+type ProductForMenu struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	Price      int    `json:"price"`
+	Category   string `json:"category"`
+	PictureUrl string `json:"picture_url"`
+	Status     string `json:"status"`
+}
+
+type ProductsDetails struct {
+	ID         int      `json:"id"`
+	Name       string   `json:"name"`
+	Price      int      `json:"price"`
+	Category   string   `json:"category"`
+	PictureUrl string   `json:"picture_url"`
+	Branch     []Branch `json:"branches"`
+}
+
+type BranchProductsForMenu struct { // No variable Quantity because customer doesnt need to see it
+	Branch  Branch           `json:"branch"`
+	Product []ProductForMenu `json:"products"`
+}
+
+type BranchProductForInsert struct {
+	Branch   string         `json:"branch"`
+	Product  ProductForMenu `json:"products"`
+	Quantity int            `json:"quantity"`
+}
+
+type BranchProduct struct {
+	Branch   Branch         `json:"branch"`
+	Product  ProductForMenu `json:"products"`
+	Quantity int            `json:"quantity"`
+}
+
 type OrderDetails struct {
 	ID       int
-	Product  Product `json:"product"`
-	Quantity int     `json:"quantity"`
+	Product  ProductForMenu `json:"product"`
+	Quantity int            `json:"quantity"`
 }
 
 type Order struct {
