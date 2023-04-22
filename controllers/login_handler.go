@@ -60,6 +60,10 @@ func Login(c *gin.Context) {
 	role := user.Role
 	generateToken(c, id, username, role)
 
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Login successful",
+	})
+
 }
 
 func Logout(c *gin.Context) {

@@ -67,7 +67,7 @@ func main() {
 	branchesRoutes.DELETE("/:id", controllers.AuthMiddleware("ADMIN"), controllers.DeleteBranch)
 
 	// CUSTOMER
-	customerRoutes := router.Group("/customer")
+	customerRoutes := router.Group("/customers")
 	customerRoutes.PUT("/", controllers.AuthMiddleware("CUSTOMER"), controllers.UpdateCustomerProfile)
 	customerRoutes.PUT("/password", controllers.AuthMiddleware("CUSTOMER"), controllers.UpdateCustomerPassword)
 
