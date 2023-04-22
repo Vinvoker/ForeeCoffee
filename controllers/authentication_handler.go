@@ -37,9 +37,6 @@ func generateToken(c *gin.Context, id int, name string, role string) {
 		HttpOnly: true,
 	})
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
-	})
 }
 
 func resetUserToken(c *gin.Context) {

@@ -66,6 +66,11 @@ func main() {
 	branchesRoutes.PUT("/:id", controllers.AuthMiddleware("ADMIN"), controllers.UpdateBranch)
 	branchesRoutes.DELETE("/:id", controllers.AuthMiddleware("ADMIN"), controllers.DeleteBranch)
 
+	// CUSTOMER
+	customerRoutes := router.Group("/customers")
+	customerRoutes.PUT("/", controllers.AuthMiddleware("CUSTOMER"), controllers.UpdateCustomerProfile)
+	customerRoutes.PUT("/password", controllers.AuthMiddleware("CUSTOMER"), controllers.UpdateCustomerPassword)
+
 	docs.SwaggerInfo.BasePath = "/api/v1"
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
