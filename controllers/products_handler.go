@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -71,6 +72,11 @@ func GetAllProductsByBranch(c *gin.Context) {
 
 	branchName := c.Query("Branch")
 
+	if branchName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Input branch cannot be empty"})
+		return
+	}
+
 	query := "SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address, bp.productQuantity " +
 		"FROM product p " +
 		"JOIN branchproduct bp ON p.id=bp.productId " +
@@ -124,6 +130,11 @@ func GetProductsCoffeeByBranch(c *gin.Context) {
 	defer db.Close()
 
 	branchName := c.Query("Branch")
+
+	if branchName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Input branch cannot be empty"})
+		return
+	}
 
 	query := "SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address, bp.productQuantity " +
 		"FROM product p " +
@@ -179,6 +190,11 @@ func GetProductsYakultByBranch(c *gin.Context) {
 
 	branchName := c.Query("Branch")
 
+	if branchName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Input branch cannot be empty"})
+		return
+	}
+
 	query := "SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address, bp.productQuantity " +
 		"FROM product p " +
 		"JOIN branchproduct bp ON p.id=bp.productId " +
@@ -232,6 +248,10 @@ func GetProductsTeaByBranch(c *gin.Context) {
 	defer db.Close()
 
 	branchName := c.Query("Branch")
+	if branchName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Input branch cannot be empty"})
+		return
+	}
 
 	query := "SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address, bp.productQuantity " +
 		"FROM product p " +
@@ -286,7 +306,14 @@ func GetProductByNameAndBranch(c *gin.Context) {
 	defer db.Close()
 
 	branchName := c.Query("Branch")
-	productName := "%" + c.Query("Name") + "%"
+	productName := c.Query("Name")
+
+	if branchName == "" || productName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Input branch and name cannot be empty"})
+		return
+	}
+
+	productName = "%" + c.Query("Name") + "%"
 
 	query := "SELECT p.id, p.name, p.price, p.pictureUrl, p.category, b.id, b.name, b.address, bp.productQuantity " +
 		"FROM product p " +
@@ -340,7 +367,7 @@ func InsertProduct(c *gin.Context) {
 	db := connect()
 	defer db.Close()
 
-	var newProduct BranchProductForInsert
+	var newProduct Product
 
 	if errBind := c.Bind(&newProduct); errBind != nil {
 		fmt.Print(errBind)
@@ -348,12 +375,25 @@ func InsertProduct(c *gin.Context) {
 		return
 	}
 
+	if newProduct.Name == "" || newProduct.Price <= 0 || newProduct.Category == "" || newProduct.PictureUrl == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Input product cannot be empty"})
+		return
+	}
+
+	// Check if new product really does not have its name already
+	var oldProduct int
+	errGetOldProduct := db.QueryRow("SELECT `id` FROM `product` WHERE `name`=?", newProduct.Name).Scan(&oldProduct)
+	if errGetOldProduct != sql.ErrNoRows {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Product existed already"})
+		return
+	}
+
 	// INSERT TO PRODUCT TABLE
 	_, errQueryInsertProduct := db.Query("INSERT INTO product (name, price, category, pictureUrl) VALUES (?,?,?,?)",
-		newProduct.Product.Name,
-		newProduct.Product.Price,
-		newProduct.Product.Category,
-		newProduct.Product.PictureUrl,
+		newProduct.Name,
+		newProduct.Price,
+		newProduct.Category,
+		newProduct.PictureUrl,
 	)
 
 	if errQueryInsertProduct != nil {
@@ -362,44 +402,13 @@ func InsertProduct(c *gin.Context) {
 		return
 	}
 
-	// GET ID BRANCH and NEW PRODUCT ID
-	var branchId int
-	var productId int
-
-	rows, errQueryGetIDs := db.Query("SELECT p.id, b.id FROM product p, branches b WHERE b.name=? AND p.name=?",
-		newProduct.Branch,
-		newProduct.Product.Name,
-	)
-
-	if errQueryGetIDs != nil {
-		log.Println(errQueryGetIDs)
-		c.JSON(400, gin.H{"error": "Something has gone wrong with the Product query"})
+	errGetNewProductId := db.QueryRow("SELECT `id` FROM `product` WHERE `name`=?", newProduct.Name).Scan(&newProduct.ID)
+	if errGetNewProductId != nil {
+		fmt.Println(errGetNewProductId)
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Get new product ID failed"})
 		return
 	}
-
-	for rows.Next() {
-		if errorGetIDs := rows.Scan(&productId, &branchId); errQueryInsertProduct != nil {
-			log.Println(errorGetIDs)
-			c.JSON(400, gin.H{"error": "id product and branch not found"})
-			return
-		}
-	}
-
-	// INSERT TO BRANCH-PRODUCT TABLE
-	_, errQueryInsertBranchProduct := db.Query("INSERT INTO branchproduct (branchId, productId, productQuantity) VALUES (?,?,?)",
-		branchId,
-		productId,
-		newProduct.Quantity,
-	)
-
-	if errQueryInsertBranchProduct != nil {
-		log.Println(errQueryInsertBranchProduct)
-		c.JSON(400, gin.H{"error": "insert to branch-product table failed"})
-		return
-	} else {
-		newProduct.Product.ID = productId
-		c.IndentedJSON(http.StatusCreated, newProduct)
-	}
+	c.IndentedJSON(http.StatusCreated, newProduct)
 
 }
 
