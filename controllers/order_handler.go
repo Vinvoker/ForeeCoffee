@@ -23,3 +23,7 @@ func InsertOrder(c *gin.Context) {
 func HistoryOrder(c *gin.Context) {
 
 }
+
+func UpdateOrderStatus(c *gin.Context) {
+
+}

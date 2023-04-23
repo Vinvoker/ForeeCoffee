@@ -38,7 +38,8 @@ func main() {
 	// ORDERS
 	ordersRoutes := router.Group("/orders")
 	ordersRoutes.POST("", controllers.AuthMiddleware("CUSTOMER"), controllers.InsertOrder)
-	ordersRoutes.POST("/history", controllers.AuthMiddleware("CUSTOMER"), controllers.HistoryOrder)
+	ordersRoutes.GET("/history", controllers.AuthMiddleware("CUSTOMER"), controllers.HistoryOrder)
+	ordersRoutes.POST("/status", controllers.AuthMiddleware("ADMIN"), controllers.UpdateOrderStatus)
 	// sebelum order -> pilih cabang
 	// db buat cabang
 
