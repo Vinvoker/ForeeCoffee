@@ -77,8 +77,16 @@ type OrderDetails struct {
 type Order struct {
 	ID              int            `json:"id"`
 	TransactionTime time.Time      `json:"transaction_time"`
+	Status          string         `json:"status"`
 	Details         []OrderDetails `json:"details"`
 	TotalPrice      int            `json:"total_price"`
+}
+
+type OrderHistory struct {
+	Order        []Order      `json:"order"`
+	Branch       Branch       `json:"branch"`
+	Product      Product      `json:"product"`
+	OrderDetails OrderDetails `json:"order_details"`
 }
 
 type Investor struct {
