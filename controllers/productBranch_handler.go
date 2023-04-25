@@ -18,10 +18,10 @@ func InsertMenuBranch(c *gin.Context) {
 	productStok := c.PostForm("productQuantity")
 
 	// mencari id branch
-	var branchId int
-	queryBranch := "SELECT id FROM `branches` WHERE name LIKE ?"
+	var branch Branch
+	queryBranch := "SELECT id, name, address FROM `branches` WHERE name LIKE ?"
 	row, _ := db.Prepare(queryBranch)
-	err := row.QueryRow(branchName).Scan(&branchId)
+	err := row.QueryRow(branchName).Scan(&branch.ID, &branch.Name, &branch.Address)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Nama Branch tidak ditemukan",
@@ -31,10 +31,10 @@ func InsertMenuBranch(c *gin.Context) {
 	}
 
 	// cek apakah product yang ingin dimasukkan ke branch ada di list all product
-	query := "SELECT id FROM `product` WHERE name LIKE ?"
+	query := "SELECT id, name, price, pictureUrl, category FROM `product` WHERE name LIKE ?"
 	rows, _ := db.Prepare(query)
-	var productId string
-	err = rows.QueryRow(productName).Scan(&productId)
+	var product Product
+	err = rows.QueryRow(productName).Scan(&product.ID, &product.Name, &product.Price, &product.PictureUrl, &product.Category)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -53,7 +53,7 @@ func InsertMenuBranch(c *gin.Context) {
 	rows, _ = db.Prepare(query)
 	var productQuantity int
 
-	err = rows.QueryRow(productId, branchId).Scan(&productQuantity)
+	err = rows.QueryRow(product.ID, branch.ID).Scan(&productQuantity)
 	if err != nil && err != sql.ErrNoRows {
 		c.AbortWithStatus(http.StatusBadRequest)
 		log.Println("error 2: ", err)
@@ -69,8 +69,8 @@ func InsertMenuBranch(c *gin.Context) {
 	// insert product ke branch
 	queryInsert := "INSERT INTO `branchproduct`(`branchId`, `productId`, `productQuantity`) VALUES (?,?,?)"
 	_, err = db.Exec(queryInsert,
-		branchId,
-		productId,
+		branch.ID,
+		product.ID,
 		productStok)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -78,8 +78,9 @@ func InsertMenuBranch(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Insert Product ke Branch Success",
-		"status":  http.StatusOK,
+		"Branch":        branch,
+		"Product":       product,
+		"Product Stock": productStok,
 	})
 
 }
@@ -93,10 +94,10 @@ func UpdateMenuBranch(c *gin.Context) {
 	plusStok, _ := strconv.Atoi(c.PostForm("plusStok"))
 
 	// mencari id branch
-	var branchId int
-	queryBranch := "SELECT id FROM `branches` WHERE name LIKE ?"
+	var updateProduct UpdateProductBranch
+	queryBranch := "SELECT id, name, address FROM `branches` WHERE name LIKE ?"
 	row, _ := db.Prepare(queryBranch)
-	err := row.QueryRow(branchName).Scan(&branchId)
+	err := row.QueryRow(branchName).Scan(&updateProduct.Branch.ID, &updateProduct.Branch.Name, &updateProduct.Branch.Address)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Nama Branch tidak ditemukan",
@@ -106,10 +107,9 @@ func UpdateMenuBranch(c *gin.Context) {
 	}
 
 	// mencari id product
-	query := "SELECT id FROM `product` WHERE name LIKE ?"
+	query := "SELECT id, name, price, pictureUrl, category FROM `product` WHERE name LIKE ?"
 	rows, _ := db.Prepare(query)
-	var productId string
-	err = rows.QueryRow(productName).Scan(&productId)
+	err = rows.QueryRow(productName).Scan(&updateProduct.Product.ID, &updateProduct.Product.Name, &updateProduct.Product.Price, &updateProduct.Product.PictureUrl, &updateProduct.Product.Category)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -123,12 +123,11 @@ func UpdateMenuBranch(c *gin.Context) {
 		return
 	}
 
-	// mendapatkan jumlah stok product di branch tersebut
+	// mendapatkan jumlah stok lama product di branch tersebut
 	query = "SELECT bp.productQuantity FROM `branchproduct` bp JOIN branches b ON bp.branchId = b.id WHERE bp.productId = ? AND b.id = ?"
 	rows, _ = db.Prepare(query)
-	var productQuantity int
 
-	err = rows.QueryRow(productId, branchId).Scan(&productQuantity)
+	err = rows.QueryRow(updateProduct.Product.ID, updateProduct.Branch.ID).Scan(&updateProduct.OldStock)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -141,21 +140,18 @@ func UpdateMenuBranch(c *gin.Context) {
 		log.Println("error 2: ", err)
 		return
 	}
-	newStok := productQuantity + plusStok
+	updateProduct.NewStock = updateProduct.OldStock + plusStok
 	queryUpdate := "UPDATE `branchproduct` SET `productQuantity`= ? WHERE branchId = ? AND productId = ?"
 	_, err = db.Exec(queryUpdate,
-		newStok,
-		branchId,
-		productId)
+		updateProduct.NewStock,
+		updateProduct.Branch.ID,
+		updateProduct.Product.ID)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		log.Println("error 2: ", err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Update stok product berhasil",
-		"status":  http.StatusOK,
-	})
+	c.IndentedJSON(http.StatusOK, updateProduct)
 }
 
 func DeleteMenuBranch(c *gin.Context) {
@@ -165,27 +161,58 @@ func DeleteMenuBranch(c *gin.Context) {
 	branchName := "%" + c.Param("branchName") + "%"
 	productName := "%" + c.Query("productName") + "%"
 
-	// delete query
-	queryDelete := "DELETE FROM `branchproduct` WHERE productId = (SELECT p.id FROM product p WHERE p.name LIKE ?) AND branchId = (SELECT b.id FROM branches b WHERE b.name LIKE ?)"
-	_, err := db.Exec(queryDelete,
-		productName,
-		branchName)
+	// mencari id branch
+	var branch Branch
+	queryBranch := "SELECT id, name, address FROM `branches` WHERE name LIKE ?"
+	row, _ := db.Prepare(queryBranch)
+	err := row.QueryRow(branchName).Scan(&branch.ID, &branch.Name, &branch.Address)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Nama Branch tidak ditemukan",
+			"status":  http.StatusBadRequest,
+		})
+		return
+	}
+
+	// mencari id product
+	query := "SELECT id, name, price, pictureUrl, category FROM `product` WHERE name LIKE ?"
+	rows, _ := db.Prepare(query)
+	var product Product
+	err = rows.QueryRow(productName).Scan(&product.ID, &product.Name, &product.Price, &product.PictureUrl, &product.Category)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Nama branch atau product tidak dapat ditemukan",
+				"message": "Product tidak tersedia di list product...",
 				"status":  http.StatusBadRequest,
 			})
 			return
 		}
 		c.AbortWithStatus(http.StatusBadRequest)
-		log.Println(branchName)
-		log.Println(productName)
+		log.Println("error 1: ", err)
+		return
+	}
+
+	// delete query
+	queryDelete := "DELETE FROM `branchproduct` WHERE productId = ? AND branchId = ?"
+	result, err := db.Exec(queryDelete,
+		product.ID,
+		branch.ID)
+	rowsAffected, _ := result.RowsAffected()
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
 		log.Println("error: ", err)
 		return
 	}
+	if rowsAffected == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Product tidak ditemukan di branch ini",
+			"status":  http.StatusBadRequest,
+		})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Delete produk berhasil",
-		"status":  http.StatusOK,
+		"message": "Delete product success",
+		"Branch":  branch,
+		"Product": product,
 	})
 }

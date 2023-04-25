@@ -99,3 +99,10 @@ type ProductDetail struct {
 	Quantity int
 	Price    int
 }
+
+type UpdateProductBranch struct {
+	Branch   Branch  `json:"Branch"`
+	Product  Product `json:"Product"`
+	OldStock int     `json:"Old Stock"`
+	NewStock int     `json:"New Stock"`
+}
