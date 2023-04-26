@@ -5,12 +5,8 @@ import (
 	"log"
 	"os"
 
-	docs "foreecoffee/docs"
-
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func main() {
@@ -26,13 +22,7 @@ func main() {
 	// cek riwayat order per customer
 
 	// EMAIL
-	router.POST("/cron", controllers.AuthMiddleware("ADMIN"), controllers.ActivateCRON)
-	// @BasePath /api/v1
-
-	// PingExample godoc
-	// @Summary send email
-	// @Description sending email to investors
-	// @Router /email [post]
+	router.POST("/restart-email-cron", controllers.AuthMiddleware("ADMIN"), controllers.ActivateCRON)
 	router.POST("/email", controllers.AuthMiddleware("ADMIN"), controllers.SendEmail)
 
 	// ORDERS
@@ -77,9 +67,6 @@ func main() {
 	productBranchRoutes.POST("/:branchName", controllers.AuthMiddleware("ADMIN"), controllers.InsertMenuBranch)
 	productBranchRoutes.PUT("/:branchName", controllers.AuthMiddleware("ADMIN"), controllers.UpdateMenuBranch)
 	productBranchRoutes.DELETE("/:branchName", controllers.AuthMiddleware("ADMIN"), controllers.DeleteMenuBranch)
-
-	docs.SwaggerInfo.BasePath = "/api/v1"
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	if err := router.Run(":" + port); err != nil {
 		panic(err)
