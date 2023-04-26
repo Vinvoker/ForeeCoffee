@@ -1,24 +1,61 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-func InsertOrder(c *gin.Context) {
+func InsertOrder(c *gin.Context) { //blm selesai
 	db := connect()
 	defer db.Close()
 
-	var newOrder Order
+	activeUserId := GetUserId(c)
 
-	if errBind := c.Bind(&newOrder); errBind != nil {
-		fmt.Print(errBind)
-		c.AbortWithStatus(http.StatusBadRequest)
+	branchName := c.PostForm("branch_name")
+	productName := c.PostFormArray("product_name[]")
+	quantity := c.PostFormArray("quantity[]")
+
+	var branchId int
+	err := db.QueryRow("SELECT id FROM branch WHERE name = ?", branchName).Scan(&branchId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product name"})
 		return
 	}
+
+	var orderId int
+	now := time.Now()
+	err = db.QueryRow("INSERT INTO orders (user_id, branch_id, transaction_time) VALUES (?, ?, ?) RETURNING id", activeUserId, branchId, now).Scan(&orderId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	for i, productName := range productName {
+		var productId int
+		err = db.QueryRow("SELECT id FROM products WHERE name = ?", productName).Scan(&productId)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product name"})
+			return
+		}
+
+		quantity, err := strconv.Atoi(quantity[i])
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid quantity"})
+			return
+		}
+
+		_, err = db.Exec("INSERT INTO orderdetails (order_id, product_id, quantity) VALUES (?, ?, ?)", orderId, productId, quantity)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "order created successfully"})
 }
 
 func HistoryOrder(c *gin.Context) { //masi error
@@ -68,14 +105,6 @@ func HistoryOrder(c *gin.Context) { //masi error
 }
 
 func UpdateOrderStatus(c *gin.Context) {
-	// currentUserRole := c.GetHeader("role")
-	// fmt.Println("currentUserRole:", currentUserRole)
-
-	// if currentUserRole != "ADMIN" {
-	// 	c.JSON(http.StatusUnauthorized, gin.H{"message": "Only admins can access this endpoint"})
-	// 	return
-	// }
-
 	db := connect()
 	defer db.Close()
 
