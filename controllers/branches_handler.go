@@ -69,6 +69,7 @@ func UpdateBranch(c *gin.Context) {
 	branchName := c.PostForm("name")
 	branchAddress := c.PostForm("address")
 
+	//Check if branch exists
 	_, errGetOldBranch := db.Exec("SELECT * FROM branches WHERE id=?", branchId)
 	if errGetOldBranch != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Branch doesn't exist"})
@@ -97,6 +98,13 @@ func DeleteBranch(c *gin.Context) {
 
 	if branchId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Input branch id cannot be empty"})
+		return
+	}
+
+	//Check if branch exists
+	_, errGetOldBranch := db.Exec("SELECT * FROM branches WHERE id=?", branchId)
+	if errGetOldBranch != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Branch doesn't exist"})
 		return
 	}
 
