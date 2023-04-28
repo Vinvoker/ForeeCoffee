@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
@@ -69,10 +70,14 @@ func UpdateBranch(c *gin.Context) {
 	branchName := c.PostForm("name")
 	branchAddress := c.PostForm("address")
 
+	var branch Branch
 	//Check if branch exists
-	_, errGetOldBranch := db.Exec("SELECT * FROM branches WHERE id=?", branchId)
-	if errGetOldBranch != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Branch doesn't exist"})
+	errGetOldBranch := db.QueryRow("SELECT id, name, address FROM branches WHERE id = ?", branchId).Scan(&branch.ID, &branch.Name, &branch.Address)
+	if errGetOldBranch == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Branch does not exist"})
+		return
+	} else if errGetOldBranch != nil {
+		log.Fatal(errGetOldBranch)
 		return
 	}
 
@@ -96,15 +101,19 @@ func DeleteBranch(c *gin.Context) {
 
 	branchId := c.Param("id")
 
-	if branchId == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Input branch id cannot be empty"})
+	var branch Branch
+	//Check if branch exists
+	errGetOldBranch := db.QueryRow("SELECT id, name, address FROM branches WHERE id = ?", branchId).Scan(&branch.ID, &branch.Name, &branch.Address)
+	if errGetOldBranch == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Branch not found"})
+		return
+	} else if errGetOldBranch != nil {
+		log.Fatal(errGetOldBranch)
 		return
 	}
 
-	//Check if branch exists
-	_, errGetOldBranch := db.Exec("SELECT * FROM branches WHERE id=?", branchId)
-	if errGetOldBranch != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Branch doesn't exist"})
+	if branchId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Input branch id cannot be empty"})
 		return
 	}
 

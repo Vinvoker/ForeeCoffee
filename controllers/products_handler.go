@@ -413,9 +413,83 @@ func InsertProduct(c *gin.Context) {
 }
 
 func UpdateProduct(c *gin.Context) {
+	db := connect()
+	defer db.Close()
 
+	productId := c.Param("id")
+	productName := c.PostForm("name")
+	productPrice := c.PostForm("price")
+	productUrl := c.PostForm("url")
+	productCategory := c.PostForm("category")
+
+	var product Product
+	//Check if product exists
+	errGetOldProduct := db.QueryRow("SELECT id, name, price FROM product WHERE id = ?", productId).Scan(&product.ID, &product.Name, &product.Price)
+	if errGetOldProduct == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product does not exist"})
+		return
+	} else if errGetOldProduct != nil {
+		log.Fatal(errGetOldProduct)
+		return
+	}
+
+	c.JSON(http.StatusOK, product)
+
+	if productId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Product ID cannot be empty"})
+		return
+	}
+
+	_, err := db.Exec("UPDATE product SET name= ?, price= ?, pictureurl= ?, category= ? WHERE id=?", productName, productPrice, productUrl, productCategory, productId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in update query"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Product update successful"})
 }
 
 func DeleteProduct(c *gin.Context) {
+	db := connect()
+	defer db.Close()
 
+	productId := c.Param("id")
+
+	var product Product
+	//Check if product exists
+	errGetOldProduct := db.QueryRow("SELECT id, name, price FROM product WHERE id = ?", productId).Scan(&product.ID, &product.Name, &product.Price)
+	if errGetOldProduct == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product does not exist"})
+		return
+	} else if errGetOldProduct != nil {
+		log.Fatal(errGetOldProduct)
+		return
+	}
+
+	c.JSON(http.StatusOK, product)
+
+	if productId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Product ID cannot be empty"})
+		return
+	}
+
+	_, errDelFromProductBranch := db.Exec("DELETE FROM branchproduct WHERE productid = ?", productId)
+	if errDelFromProductBranch != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in delete query for product branch"})
+		return
+	}
+
+	_, errDelFromOrderDetails := db.Exec("DELETE FROM orderdetails WHERE productid = ?", productId)
+	if errDelFromOrderDetails != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in delete query for product branch"})
+		return
+	}
+
+	_, err := db.Exec("DELETE FROM product WHERE id = ?", productId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in delete query"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Product delete successful"})
 }
