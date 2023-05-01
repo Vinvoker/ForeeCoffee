@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"time"
-
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -31,6 +29,11 @@ type Product struct {
 	Price      int    `json:"price"`
 	Category   string `json:"category"`
 	PictureUrl string `json:"picture_url"`
+}
+
+type ShortProduct struct {
+	Name  string `json:"name"`
+	Price int    `json:"price"`
 }
 
 type ProductForMenu struct {
@@ -69,24 +72,17 @@ type BranchProduct struct {
 }
 
 type OrderDetails struct {
-	ID       int
-	Product  ProductForMenu `json:"product"`
-	Quantity int            `json:"quantity"`
+	Product  ShortProduct `json:"product"`
+	Quantity int          `json:"quantity"`
 }
 
 type Order struct {
 	ID              int            `json:"id"`
-	TransactionTime time.Time      `json:"transaction_time"`
+	TransactionTime string         `json:"transaction_time"`
+	BranchID        int            `json:"branch_id"`
 	Status          string         `json:"status"`
 	Details         []OrderDetails `json:"details"`
 	TotalPrice      int            `json:"total_price"`
-}
-
-type OrderHistory struct {
-	Order        []Order      `json:"order"`
-	Branch       Branch       `json:"branch"`
-	Product      Product      `json:"product"`
-	OrderDetails OrderDetails `json:"order_details"`
 }
 
 type Investor struct {
@@ -105,4 +101,10 @@ type UpdateProductBranch struct {
 	Product  Product `json:"Product"`
 	OldStock int     `json:"Old Stock"`
 	NewStock int     `json:"New Stock"`
+}
+
+type Response struct {
+	Status  int         `json:"status"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
 }

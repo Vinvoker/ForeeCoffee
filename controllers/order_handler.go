@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -9,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InsertOrder(c *gin.Context) { //blm selesai
+func InsertOrder(c *gin.Context) {
 	db := connect()
 	defer db.Close()
 
@@ -19,26 +18,37 @@ func InsertOrder(c *gin.Context) { //blm selesai
 	productName := c.PostFormArray("product_name[]")
 	quantity := c.PostFormArray("quantity[]")
 
+	// pilih branch
 	var branchId int
-	err := db.QueryRow("SELECT id FROM branch WHERE name = ?", branchName).Scan(&branchId)
+	err := db.QueryRow("SELECT id FROM branches WHERE name = ?", branchName).Scan(&branchId)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product name"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid branch name"})
 		return
 	}
 
+	// insert ke tabel order
 	var orderId int
 	now := time.Now()
-	err = db.QueryRow("INSERT INTO orders (user_id, branch_id, transaction_time) VALUES (?, ?, ?) RETURNING id", activeUserId, branchId, now).Scan(&orderId)
+	result, err := db.Exec("INSERT INTO `order` (transactionTime, userId, status, branchId) VALUES (?, ?, 'ONGOING',  ?)", now, activeUserId, branchId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	// mengambil orderId dari order yang baru saja dilakukan
+	lastInsertId, err := result.LastInsertId()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	orderId = int(lastInsertId)
+
+	// insert ke tabel orderdetails
 	for i, productName := range productName {
 		var productId int
-		err = db.QueryRow("SELECT id FROM products WHERE name = ?", productName).Scan(&productId)
+		err = db.QueryRow("SELECT id FROM product WHERE name = ?", productName).Scan(&productId)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product name"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product name", "debug": err.Error()})
 			return
 		}
 
@@ -48,7 +58,18 @@ func InsertOrder(c *gin.Context) { //blm selesai
 			return
 		}
 
-		_, err = db.Exec("INSERT INTO orderdetails (order_id, product_id, quantity) VALUES (?, ?, ?)", orderId, productId, quantity)
+		_, err = db.Exec("INSERT INTO orderdetails (orderId, productId, quantity) VALUES (?, ?, ?)", orderId, productId, quantity)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// mengurangi quantity product di cabang tersebut
+		_, err = db.Exec("UPDATE branchproduct bp "+
+			"JOIN branches b ON bp.branchId = b.id "+
+			"JOIN product p ON bp.productId = p.id "+
+			"SET bp.productQuantity = bp.productQuantity - ? "+
+			"WHERE b.id = ? AND p.id = ?", quantity, branchId, productId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -64,43 +85,62 @@ func HistoryOrder(c *gin.Context) { //masi error
 
 	activeUserId := GetUserId(c)
 
-	query := "SELECT o.id, o.transactionTime, o.status, b.name, p.name, od.quantity FROM `order` o " +
-		"JOIN `orderdetails` od ON o.id = od.orderId " +
-		"JOIN branches b ON o.branchid = b.id " +
-		"JOIN product p ON od.productId = p.id WHERE o.userId = ?;"
-	rows, err := db.Query(query, activeUserId)
+	var orders []Order
+	query := "SELECT id FROM `order` WHERE userId = ?"
+	orderRows, err := db.Query(query, activeUserId)
 	if err != nil {
-		log.Println(err)
-		c.JSON(400, gin.H{"error": "Something has gone wrong with the Order History query"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch orders"})
 		return
 	}
+	defer orderRows.Close()
 
-	var orders []Order
-	for rows.Next() {
-		var order Order
-		var branch Branch
-		var product Product
-		var orderDetail OrderDetails
-
-		if err := rows.Scan(
-			&order.ID,
-			&order.TransactionTime,
-			&order.Status,
-			&branch.Name,
-			&product.Name,
-			&orderDetail.Quantity,
-		); err != nil {
-			log.Println(err)
-			c.JSON(400, gin.H{"error": "no order"})
+	for orderRows.Next() {
+		totalPrice := 0
+		var orderID int
+		err := orderRows.Scan(&orderID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to scan order ID"})
 			return
 		}
 
-		order.Details = []OrderDetails{orderDetail}
-		order.TotalPrice = orderDetail.Quantity * product.Price
+		var order Order
+		var orderDetails []OrderDetails
+		detailRows, err := db.Query("SELECT product.name, product.price, orderdetails.quantity FROM product"+
+			" JOIN orderdetails ON product.id = orderdetails.productId"+
+			" JOIN `order` ON orderdetails.orderid = order.id WHERE order.id = ?", orderID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch order details"})
+			return
+		}
+		defer detailRows.Close()
+
+		for detailRows.Next() {
+			var orderDetail OrderDetails
+			err := detailRows.Scan(&orderDetail.Product.Name, &orderDetail.Product.Price, &orderDetail.Quantity)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to scan order detail"})
+				return
+			}
+			totalPrice += (orderDetail.Product.Price * orderDetail.Quantity)
+			orderDetails = append(orderDetails, orderDetail)
+		}
+
+		order.TotalPrice = totalPrice
+		order.Details = orderDetails
+		order.ID = orderID
+		err = db.QueryRow("SELECT transactionTime, branchid, `status` FROM `order` WHERE id = ?", orderID).Scan(&order.TransactionTime, &order.BranchID, &order.Status)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
 		orders = append(orders, order)
 	}
 
-	response := OrderHistory{Order: orders}
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = orders
 	c.IndentedJSON(http.StatusOK, response)
 }
 
