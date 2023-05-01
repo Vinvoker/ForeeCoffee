@@ -22,7 +22,7 @@ var rdb = redis.NewClient(&redis.Options{
 })
 var ctx = context.Background()
 
-func ActivateCRON(c *gin.Context) {
+func StartCRON(c *gin.Context) {
 	location, err := time.LoadLocation("Asia/Jakarta")
 	if err != nil {
 		log.Fatal(err)
@@ -35,6 +35,11 @@ func ActivateCRON(c *gin.Context) {
 		SendEmail(c)
 	})
 	s.StartAsync()
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"message": "CRON job restarted successfully",
+	})
 }
 
 func GetOwners(c *gin.Context) []Investor {
@@ -155,7 +160,10 @@ func SendEmail(c *gin.Context) {
 
 	}
 	wg.Wait()
-	c.JSON(http.StatusOK, gin.H{"message": "All emails successfully sent"})
+	c.JSON(http.StatusOK, gin.H{
+		"status":  http.StatusOK,
+		"message": "All emails successfully sent",
+	})
 }
 
 func CacheProdukGambar() {

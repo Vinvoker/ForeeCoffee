@@ -22,8 +22,8 @@ func main() {
 	// cek riwayat order per customer
 
 	// EMAIL
-	router.POST("/restart-email-cron", controllers.AuthMiddleware("ADMIN"), controllers.ActivateCRON)
-	router.POST("/email", controllers.AuthMiddleware("ADMIN"), controllers.SendEmail)
+	router.GET("/restart-email-cron", controllers.AuthMiddleware("ADMIN"), controllers.StartCRON)
+	router.GET("/email", controllers.AuthMiddleware("ADMIN"), controllers.SendEmail)
 
 	// ORDERS
 	ordersRoutes := router.Group("/orders")
