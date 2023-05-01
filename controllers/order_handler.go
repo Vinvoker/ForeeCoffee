@@ -79,7 +79,7 @@ func InsertOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "order created successfully"})
 }
 
-func HistoryOrder(c *gin.Context) { //masi error
+func HistoryOrder(c *gin.Context) {
 	db := connect()
 	defer db.Close()
 
@@ -157,8 +157,8 @@ func UpdateOrderStatus(c *gin.Context) {
 	)
 
 	if errQueryUpdateOrderStatus != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Update Order Status FAILED"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Update Order Status Failed"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Update Order Status SUCCESS"})
+	c.JSON(http.StatusOK, gin.H{"message": "Update Order Status Success"})
 }
