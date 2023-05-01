@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,10 +16,9 @@ func InsertOrder(c *gin.Context) {
 	activeUserId := GetUserId(c)
 
 	branchName := c.PostForm("branch_name")
-	productName := c.PostFormArray("product_name[]")
+	productNames := c.PostFormArray("product_name[]")
 	quantity := c.PostFormArray("quantity[]")
 
-	// pilih branch
 	var branchId int
 	err := db.QueryRow("SELECT id FROM branches WHERE name = ?", branchName).Scan(&branchId)
 	if err != nil {
@@ -26,27 +26,9 @@ func InsertOrder(c *gin.Context) {
 		return
 	}
 
-	// insert ke tabel order
-	var orderId int
-	now := time.Now()
-	result, err := db.Exec("INSERT INTO `order` (transactionTime, userId, status, branchId) VALUES (?, ?, 'ONGOING',  ?)", now, activeUserId, branchId)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// mengambil orderId dari order yang baru saja dilakukan
-	lastInsertId, err := result.LastInsertId()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	orderId = int(lastInsertId)
-
-	// insert ke tabel orderdetails
-	for i, productName := range productName {
-		var productId int
-		err = db.QueryRow("SELECT id FROM product WHERE name = ?", productName).Scan(&productId)
+	productIds := make([]int, len(productNames))
+	for i, productName := range productNames {
+		err = db.QueryRow("SELECT id FROM product WHERE name = ?", productName).Scan(&productIds[i])
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product name", "debug": err.Error()})
 			return
@@ -58,18 +40,34 @@ func InsertOrder(c *gin.Context) {
 			return
 		}
 
-		_, err = db.Exec("INSERT INTO orderdetails (orderId, productId, quantity) VALUES (?, ?, ?)", orderId, productId, quantity)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		// mengurangi quantity product di cabang tersebut
 		_, err = db.Exec("UPDATE branchproduct bp "+
 			"JOIN branches b ON bp.branchId = b.id "+
 			"JOIN product p ON bp.productId = p.id "+
 			"SET bp.productQuantity = bp.productQuantity - ? "+
-			"WHERE b.id = ? AND p.id = ?", quantity, branchId, productId)
+			"WHERE b.id = ? AND p.id = ?", quantity, branchId, productIds[i])
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	now := time.Now()
+
+	result, err := db.Exec("INSERT INTO `order` (transactionTime, userId, status, branchId) VALUES (?, ?, 'ONGOING',  ?)", now, activeUserId, branchId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	lastInsertId, err := result.LastInsertId()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	orderId := int(lastInsertId)
+	for i, _ := range productNames {
+		_, err = db.Exec("INSERT INTO orderdetails (orderId, productId, quantity) VALUES (?, ?, ?)", orderId, productIds[i], quantity[i])
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -152,7 +150,21 @@ func UpdateOrderStatus(c *gin.Context) {
 	db := connect()
 	defer db.Close()
 
-	status := c.PostForm("status")
+	status := strings.ToUpper(c.PostForm("status"))
+	validStatusValues := []string{"ONGOING", "COMPLETED", "CANCELLED"}
+
+	isValidStatus := false
+	for _, validStatus := range validStatusValues {
+		if status == validStatus {
+			isValidStatus = true
+			break
+		}
+	}
+	if !isValidStatus {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Order Status Value"})
+		return
+	}
+
 	orderId := c.Param("id")
 
 	_, errQueryUpdateOrderStatus := db.Exec("UPDATE `order` SET `status`=? WHERE `id`=?",

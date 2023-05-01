@@ -18,9 +18,6 @@ func main() {
 
 	port := os.Getenv("ROUTER_PORT")
 
-	// status order -> ongoing, finished, dll
-	// cek riwayat order per customer
-
 	// EMAIL
 	router.GET("/restart-email-cron", controllers.AuthMiddleware("ADMIN"), controllers.StartCRON)
 	router.GET("/email", controllers.AuthMiddleware("ADMIN"), controllers.SendEmail)
@@ -30,11 +27,10 @@ func main() {
 	ordersRoutes.POST("", controllers.AuthMiddleware("CUSTOMER"), controllers.InsertOrder)
 	ordersRoutes.GET("/history", controllers.AuthMiddleware("CUSTOMER"), controllers.HistoryOrder)
 	ordersRoutes.PUT("/status/:id", controllers.AuthMiddleware("ADMIN"), controllers.UpdateOrderStatus)
-	// sebelum order -> pilih cabang
 
 	// LOGIN
 	router.POST("/login", controllers.Login)
-	router.POST("/logout", controllers.Logout) // tambahin auth hrs login dulu baru bisa logout
+	router.POST("/logout", controllers.AuthMiddleware("CUSTOMER", "ADMIN", "INVESTOR"), controllers.Logout)
 	router.POST("/signup", controllers.Signup)
 
 	// PRODUCTS

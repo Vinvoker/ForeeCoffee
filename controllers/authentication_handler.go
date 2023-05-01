@@ -55,7 +55,9 @@ func AuthMiddleware(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if cookie, err := c.Cookie(cookieName); err == nil {
 			if cookie == "" {
-				c.AbortWithStatus(http.StatusUnauthorized)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"error": "Unauthorized",
+				})
 				return
 			}
 			jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
@@ -65,13 +67,17 @@ func AuthMiddleware(roles ...string) gin.HandlerFunc {
 			})
 
 			if err != nil || !parsedToken.Valid {
-				c.AbortWithStatus(http.StatusUnauthorized)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"error": "Unauthorized",
+				})
 				return
 			}
 
 			claims, ok := parsedToken.Claims.(*CustomClaims)
 			if !ok {
-				c.AbortWithStatus(http.StatusUnauthorized)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"error": "Unauthorized",
+				})
 				return
 			}
 
@@ -84,11 +90,17 @@ func AuthMiddleware(roles ...string) gin.HandlerFunc {
 			}
 
 			if !authorized {
-				c.AbortWithStatus(http.StatusUnauthorized)
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"error": "Unauthorized",
+				})
 				return
 			}
-
 			c.Next()
+		} else {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Unauthorized",
+			})
+			return
 		}
 	}
 }
@@ -97,7 +109,9 @@ func GetUserId(c *gin.Context) int {
 	cookieName := os.Getenv("COOKIE_NAME")
 	if cookie, err := c.Cookie(cookieName); err == nil {
 		if cookie == "" {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Unauthorized",
+			})
 			return 0
 		}
 		jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
@@ -107,13 +121,17 @@ func GetUserId(c *gin.Context) int {
 		})
 
 		if err != nil || !parsedToken.Valid {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Unauthorized",
+			})
 			return 0
 		}
 
 		claims, ok := parsedToken.Claims.(*CustomClaims)
 		if !ok {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Unauthorized",
+			})
 			return 0
 		}
 

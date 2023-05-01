@@ -56,7 +56,6 @@ func InsertBranch(c *gin.Context) {
 		return
 	}
 
-	// Insert new branch into database
 	_, err := db.Exec("INSERT INTO branches (name, address) VALUES (?, ?)", branchName, branchAddress)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in insert query"})
@@ -79,7 +78,7 @@ func UpdateBranch(c *gin.Context) {
 	branchAddress := c.PostForm("address")
 
 	var branch Branch
-	//Check if branch exists
+
 	errGetOldBranch := db.QueryRow("SELECT id, name, address FROM branches WHERE id = ?", branchId).Scan(&branch.ID, &branch.Name, &branch.Address)
 	if errGetOldBranch == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Branch does not exist"})
@@ -114,7 +113,7 @@ func DeleteBranch(c *gin.Context) {
 	branchId := c.Param("id")
 
 	var branch Branch
-	//Check if branch exists
+
 	errGetOldBranch := db.QueryRow("SELECT id, name, address FROM branches WHERE id = ?", branchId).Scan(&branch.ID, &branch.Name, &branch.Address)
 	if errGetOldBranch == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Branch not found"})

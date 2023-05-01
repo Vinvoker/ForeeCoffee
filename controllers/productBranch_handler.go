@@ -17,7 +17,6 @@ func InsertMenuBranch(c *gin.Context) {
 	productName := "%" + c.PostForm("productName") + "%"
 	productStok := c.PostForm("productQuantity")
 
-	// mencari id branch
 	var branch Branch
 	queryBranch := "SELECT id, name, address FROM `branches` WHERE name LIKE ?"
 	row, _ := db.Prepare(queryBranch)
@@ -30,7 +29,6 @@ func InsertMenuBranch(c *gin.Context) {
 		return
 	}
 
-	// cek apakah product yang ingin dimasukkan ke branch ada di list all product
 	query := "SELECT id, name, price, pictureUrl, category FROM `product` WHERE name LIKE ?"
 	rows, _ := db.Prepare(query)
 	var product Product
@@ -48,7 +46,6 @@ func InsertMenuBranch(c *gin.Context) {
 		return
 	}
 
-	// cek apakah product sudah ada di branch tersebut atau belum
 	query = "SELECT bp.productQuantity FROM `branchproduct` bp JOIN branches b ON bp.branchId = b.id WHERE bp.productId = ? AND b.id = ?"
 	rows, _ = db.Prepare(query)
 	var productQuantity int
@@ -66,7 +63,7 @@ func InsertMenuBranch(c *gin.Context) {
 		})
 		return
 	}
-	// insert product ke branch
+
 	queryInsert := "INSERT INTO `branchproduct`(`branchId`, `productId`, `productQuantity`) VALUES (?,?,?)"
 	_, err = db.Exec(queryInsert,
 		branch.ID,
@@ -97,7 +94,6 @@ func UpdateMenuBranch(c *gin.Context) {
 	productName := "%" + c.PostForm("productName") + "%"
 	plusStok, _ := strconv.Atoi(c.PostForm("plusStok"))
 
-	// mencari id branch
 	var updateProduct UpdateProductBranch
 	queryBranch := "SELECT id, name, address FROM `branches` WHERE name LIKE ?"
 	row, _ := db.Prepare(queryBranch)
@@ -110,7 +106,6 @@ func UpdateMenuBranch(c *gin.Context) {
 		return
 	}
 
-	// mencari id product
 	query := "SELECT id, name, price, pictureUrl, category FROM `product` WHERE name LIKE ?"
 	rows, _ := db.Prepare(query)
 	err = rows.QueryRow(productName).Scan(&updateProduct.Product.ID, &updateProduct.Product.Name, &updateProduct.Product.Price, &updateProduct.Product.PictureUrl, &updateProduct.Product.Category)
@@ -127,7 +122,6 @@ func UpdateMenuBranch(c *gin.Context) {
 		return
 	}
 
-	// mendapatkan jumlah stok lama product di branch tersebut
 	query = "SELECT bp.productQuantity FROM `branchproduct` bp JOIN branches b ON bp.branchId = b.id WHERE bp.productId = ? AND b.id = ?"
 	rows, _ = db.Prepare(query)
 
@@ -170,7 +164,6 @@ func DeleteMenuBranch(c *gin.Context) {
 	branchName := "%" + c.Param("branchName") + "%"
 	productName := "%" + c.Query("productName") + "%"
 
-	// mencari id branch
 	var branch Branch
 	queryBranch := "SELECT id, name, address FROM `branches` WHERE name LIKE ?"
 	row, _ := db.Prepare(queryBranch)
@@ -183,7 +176,6 @@ func DeleteMenuBranch(c *gin.Context) {
 		return
 	}
 
-	// mencari id product
 	query := "SELECT id, name, price, pictureUrl, category FROM `product` WHERE name LIKE ?"
 	rows, _ := db.Prepare(query)
 	var product Product
@@ -201,7 +193,6 @@ func DeleteMenuBranch(c *gin.Context) {
 		return
 	}
 
-	// delete query
 	queryDelete := "DELETE FROM `branchproduct` WHERE productId = ? AND branchId = ?"
 	result, err := db.Exec(queryDelete,
 		product.ID,

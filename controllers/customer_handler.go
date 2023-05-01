@@ -21,7 +21,6 @@ func UpdateCustomerProfile(c *gin.Context) {
 
 	activeUserId := GetUserId(c)
 
-	// GET OLD USERNAME (if username change -> new token)
 	var oldUsername string
 	errGetOldUsername := db.QueryRow("SELECT `username` FROM `users` WHERE `id`=?", activeUserId).Scan(&oldUsername)
 	if errGetOldUsername != nil {
@@ -46,7 +45,6 @@ func UpdateCustomerProfile(c *gin.Context) {
 	response.Data = gin.H{"message": "Update Customer Profile Success"}
 	c.JSON(http.StatusOK, response)
 
-	// GENERATE NEW TOKEN
 	if oldUsername != newUsername {
 		fmt.Println("change token!!")
 		generateToken(c, activeUserId, newUsername, "CUSTOMER")

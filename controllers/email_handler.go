@@ -28,9 +28,7 @@ func StartCRON(c *gin.Context) {
 		log.Fatal(err)
 	}
 	s := gocron.NewScheduler(location)
-	// s.Every(1).Minutes().Do(func() {
-	// 	SendEmail(c)
-	// })
+
 	s.Every(1).Day().At("09.00").Do(func() {
 		SendEmail(c)
 	})
@@ -55,15 +53,15 @@ func GetOwners(c *gin.Context) []Investor {
 	if err != nil {
 		log.Println(err)
 		c.JSON(400, gin.H{"error": "Something has gone wrong with dataowner the query"})
-		return investors
+		return nil
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&investor.Username, &investor.Email); err != nil {
 			log.Println(err)
-			c.JSON(400, gin.H{"error": "Products not found"})
-			return investors
+			c.JSON(400, gin.H{"error": "investors not found"})
+			return nil
 		} else {
 			investors = append(investors, investor)
 		}
@@ -78,20 +76,21 @@ func RekapOrder(c *gin.Context) []ProductDetail {
 	var productDetails []ProductDetail
 	var productDetail ProductDetail
 
-	rows, err := db.Query("SELECT p.productName, SUM(od.quantity), p.price FROM OrderDetails od" +
-		" JOIN `Order` o ON o.orderId = od.orderId JOIN Product p ON p.productId=od.productId WHERE" +
-		" o.transactionTime >= DATE(NOW() - INTERVAL 1 DAY) AND o.transactionTime < DATE(NOW()) GROUP BY p.productId")
+	rows, err := db.Query("SELECT p.Name, SUM(od.quantity), p.price FROM OrderDetails od" +
+		" JOIN `Order` o ON o.id = od.orderId JOIN Product p ON p.id = od.productId WHERE" +
+		" o.transactionTime >= DATE(NOW() - INTERVAL 1 DAY) AND o.transactionTime < DATE(NOW()) AND" +
+		" o.`status` = 'COMPLETED' GROUP BY p.id")
 	if err != nil {
 		log.Println(err)
 		c.JSON(400, gin.H{"error": "Something has gone wrong with the rekap order query"})
-		return productDetails
+		return nil
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&productDetail.Name, &productDetail.Quantity, &productDetail.Price); err != nil {
-			log.Println(err)
 			c.JSON(400, gin.H{"error": "product not found"})
+			return nil
 		} else {
 			productDetails = append(productDetails, productDetail)
 		}
@@ -102,8 +101,7 @@ func RekapOrder(c *gin.Context) []ProductDetail {
 }
 
 func GetValueFromRedis(productName string) string {
-	// cek key-value nya masih ada atau sudah expire
-	// kalau expirenya dalam waktu 3 menit atau kurang, refresh cache
+
 	if rdb.TTL(ctx, productName).Val() < 180 {
 		CacheProdukGambar()
 	}
@@ -121,11 +119,14 @@ func SendEmail(c *gin.Context) {
 	investors := GetOwners(c)
 	productDetails := RekapOrder(c)
 
+	if investors == nil || productDetails == nil {
+		return
+	}
+
 	var wg sync.WaitGroup
 	wg.Add(len(investors))
 	d := gomail.NewDialer("smtp.gmail.com", 587, env_email, env_password)
 
-	// bikin body string disini
 	grandTotal := 0
 	var strData string
 	for _, productDetail := range productDetails {
@@ -137,7 +138,7 @@ func SendEmail(c *gin.Context) {
 		strData += "<br>Product Price: Rp" + strconv.Itoa(productDetail.Price)
 		strData += "<br>Quantity of items bought: " + strconv.Itoa(productDetail.Quantity)
 		strData += "<br>Total from Products: Rp" + strconv.Itoa(totalProduct)
-		strData += "<br> <img src='" + productPicture + "' alt='" + productDetail.Name + "' width='200' height='300'/>"
+		strData += "<br> <img src='" + productPicture + "' alt='" + productDetail.Name + "' width='200' height='250'/>"
 	}
 
 	stringBody := "<br>Rekap Harian Tanggal " + time.Now().AddDate(0, 0, -1).Format("02-01-2006")

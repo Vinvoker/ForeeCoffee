@@ -409,7 +409,6 @@ func InsertProduct(c *gin.Context) {
 		return
 	}
 
-	// Check if new product really does not have its name already
 	var oldProduct int
 	errGetOldProduct := db.QueryRow("SELECT `id` FROM `product` WHERE `name`=?", newProduct.Name).Scan(&oldProduct)
 	if errGetOldProduct != sql.ErrNoRows {
@@ -417,7 +416,6 @@ func InsertProduct(c *gin.Context) {
 		return
 	}
 
-	// INSERT TO PRODUCT TABLE
 	_, errQueryInsertProduct := db.Query("INSERT INTO product (name, price, category, pictureUrl) VALUES (?,?,?,?)",
 		newProduct.Name,
 		newProduct.Price,
@@ -456,7 +454,7 @@ func UpdateProduct(c *gin.Context) {
 	productCategory := c.PostForm("category")
 
 	var product Product
-	//Check if product exists
+
 	errGetOldProduct := db.QueryRow("SELECT id, name, price FROM product WHERE id = ?", productId).Scan(&product.ID, &product.Name, &product.Price)
 	if errGetOldProduct == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Product does not exist"})
@@ -491,7 +489,7 @@ func DeleteProduct(c *gin.Context) {
 	productId := c.Param("id")
 
 	var product Product
-	//Check if product exists
+
 	errGetOldProduct := db.QueryRow("SELECT id, name, price FROM product WHERE id = ?", productId).Scan(&product.ID, &product.Name, &product.Price)
 	if errGetOldProduct == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Product does not exist"})

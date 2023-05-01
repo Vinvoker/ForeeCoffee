@@ -54,7 +54,7 @@ type ProductsDetails struct {
 	Branch     []Branch `json:"branches"`
 }
 
-type BranchProductsForMenu struct { // No variable Quantity because customer doesnt need to see it
+type BranchProductsForMenu struct {
 	Branch  Branch           `json:"branch"`
 	Product []ProductForMenu `json:"products"`
 }
