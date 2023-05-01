@@ -62,7 +62,11 @@ func GetAllProductsAndTheirBranches(c *gin.Context) {
 		}
 	}
 
-	c.IndentedJSON(http.StatusOK, products)
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = products
+	c.JSON(http.StatusOK, response)
 
 }
 
@@ -119,10 +123,15 @@ func GetAllProductsByBranch(c *gin.Context) {
 		}
 	}
 
-	var response BranchProductsForMenu
-	response.Product = products
-	response.Branch = branch
-	c.IndentedJSON(http.StatusOK, response)
+	var data BranchProductsForMenu
+	data.Product = products
+	data.Branch = branch
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = data
+	c.JSON(http.StatusOK, response)
 }
 
 func GetProductsCoffeeByBranch(c *gin.Context) {
@@ -178,10 +187,15 @@ func GetProductsCoffeeByBranch(c *gin.Context) {
 		}
 	}
 
-	var response BranchProductsForMenu
-	response.Product = products
-	response.Branch = branch
-	c.IndentedJSON(http.StatusOK, response)
+	var data BranchProductsForMenu
+	data.Product = products
+	data.Branch = branch
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = data
+	c.JSON(http.StatusOK, response)
 }
 
 func GetProductsYakultByBranch(c *gin.Context) {
@@ -237,10 +251,15 @@ func GetProductsYakultByBranch(c *gin.Context) {
 		}
 	}
 
-	var response BranchProductsForMenu
-	response.Product = products
-	response.Branch = branch
-	c.IndentedJSON(http.StatusOK, response)
+	var data BranchProductsForMenu
+	data.Product = products
+	data.Branch = branch
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = data
+	c.JSON(http.StatusOK, response)
 }
 
 func GetProductsTeaByBranch(c *gin.Context) {
@@ -295,10 +314,15 @@ func GetProductsTeaByBranch(c *gin.Context) {
 		}
 	}
 
-	var response BranchProductsForMenu
-	response.Product = products
-	response.Branch = branch
-	c.IndentedJSON(http.StatusOK, response)
+	var data BranchProductsForMenu
+	data.Product = products
+	data.Branch = branch
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = data
+	c.JSON(http.StatusOK, response)
 }
 
 func GetProductByNameAndBranch(c *gin.Context) {
@@ -357,10 +381,15 @@ func GetProductByNameAndBranch(c *gin.Context) {
 		}
 	}
 
-	var response BranchProductsForMenu
-	response.Product = products
-	response.Branch = branch
-	c.IndentedJSON(http.StatusOK, response)
+	var data BranchProductsForMenu
+	data.Product = products
+	data.Branch = branch
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = data
+	c.JSON(http.StatusOK, response)
 }
 
 func InsertProduct(c *gin.Context) {
@@ -408,8 +437,12 @@ func InsertProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Get new product ID failed"})
 		return
 	}
-	c.IndentedJSON(http.StatusCreated, newProduct)
 
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = newProduct
+	c.JSON(http.StatusOK, response)
 }
 
 func UpdateProduct(c *gin.Context) {
@@ -433,8 +466,6 @@ func UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, product)
-
 	if productId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Product ID cannot be empty"})
 		return
@@ -446,7 +477,11 @@ func UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Product update successful"})
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "Product update successful"}
+	c.JSON(http.StatusOK, response)
 }
 
 func DeleteProduct(c *gin.Context) {
@@ -465,8 +500,6 @@ func DeleteProduct(c *gin.Context) {
 		log.Fatal(errGetOldProduct)
 		return
 	}
-
-	c.JSON(http.StatusOK, product)
 
 	if productId == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Product ID cannot be empty"})
@@ -491,5 +524,9 @@ func DeleteProduct(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Product delete successful"})
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "Product delete successful"}
+	c.JSON(http.StatusOK, response)
 }

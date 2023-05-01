@@ -39,7 +39,12 @@ func UpdateCustomerProfile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Update Customer Profile FAILED"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Update Customer Profile Success"})
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "Update Customer Profile Success"}
+	c.JSON(http.StatusOK, response)
 
 	// GENERATE NEW TOKEN
 	if oldUsername != newUsername {
@@ -97,5 +102,10 @@ func UpdateCustomerPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Update Customer Password FAILED"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Update Customer Password Success"})
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "Update Customer Password Success"}
+	c.JSON(http.StatusOK, response)
 }

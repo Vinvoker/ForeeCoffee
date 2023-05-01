@@ -28,10 +28,12 @@ func Signup(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Sign Up Success",
-		"status":  http.StatusOK,
-	})
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "Sign Up Success"}
+	c.JSON(http.StatusOK, response)
 }
 
 func Login(c *gin.Context) {
@@ -60,17 +62,19 @@ func Login(c *gin.Context) {
 	role := user.Role
 	generateToken(c, id, username, role)
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
-	})
-
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "Login successful"}
+	c.JSON(http.StatusOK, response)
 }
 
 func Logout(c *gin.Context) {
 	resetUserToken(c)
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Logout Success",
-		"status":  http.StatusOK,
-	})
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "Logout Success"}
+	c.JSON(http.StatusOK, response)
 }

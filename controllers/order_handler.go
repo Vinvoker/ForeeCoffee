@@ -76,7 +76,11 @@ func InsertOrder(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "order created successfully"})
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "order created successfully"}
+	c.JSON(http.StatusOK, response)
 }
 
 func HistoryOrder(c *gin.Context) {
@@ -160,5 +164,10 @@ func UpdateOrderStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Update Order Status Failed"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Update Order Status Success"})
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "Update Order Status Success"}
+	c.JSON(http.StatusOK, response)
 }

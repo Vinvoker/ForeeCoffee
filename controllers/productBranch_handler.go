@@ -77,12 +77,16 @@ func InsertMenuBranch(c *gin.Context) {
 		log.Println(err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{
 		"Branch":        branch,
 		"Product":       product,
 		"Product Stock": productStok,
-	})
-
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func UpdateMenuBranch(c *gin.Context) {
@@ -151,7 +155,12 @@ func UpdateMenuBranch(c *gin.Context) {
 		log.Println("error 2: ", err)
 		return
 	}
-	c.IndentedJSON(http.StatusOK, updateProduct)
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = updateProduct
+	c.JSON(http.StatusOK, response)
 }
 
 func DeleteMenuBranch(c *gin.Context) {
@@ -210,9 +219,14 @@ func DeleteMenuBranch(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{
 		"message": "Delete product success",
 		"Branch":  branch,
 		"Product": product,
-	})
+	}
+	c.JSON(http.StatusOK, response)
 }

@@ -37,7 +37,11 @@ func GetAllBranches(c *gin.Context) {
 		}
 	}
 
-	c.IndentedJSON(http.StatusOK, branches)
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = branches
+	c.IndentedJSON(http.StatusOK, response)
 }
 
 func InsertBranch(c *gin.Context) {
@@ -59,7 +63,11 @@ func InsertBranch(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Branch insert successful"})
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "Branch insert successful"}
+	c.JSON(http.StatusOK, response)
 }
 
 func UpdateBranch(c *gin.Context) {
@@ -92,7 +100,11 @@ func UpdateBranch(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Branch update successful"})
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "Branch update successful"}
+	c.JSON(http.StatusOK, response)
 }
 
 func DeleteBranch(c *gin.Context) {
@@ -123,5 +135,9 @@ func DeleteBranch(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Branch delete successful"})
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "Branch delete successful"}
+	c.JSON(http.StatusOK, response)
 }

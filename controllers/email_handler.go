@@ -36,10 +36,11 @@ func StartCRON(c *gin.Context) {
 	})
 	s.StartAsync()
 
-	c.JSON(http.StatusOK, gin.H{
-		"status":  http.StatusOK,
-		"message": "CRON job restarted successfully",
-	})
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "CRON job restarted successfully"}
+	c.JSON(http.StatusOK, response)
 }
 
 func GetOwners(c *gin.Context) []Investor {
@@ -160,10 +161,11 @@ func SendEmail(c *gin.Context) {
 
 	}
 	wg.Wait()
-	c.JSON(http.StatusOK, gin.H{
-		"status":  http.StatusOK,
-		"message": "All emails successfully sent",
-	})
+	var response Response
+	response.Status = http.StatusOK
+	response.Message = http.StatusText(http.StatusOK)
+	response.Data = gin.H{"message": "All emails successfully sent"}
+	c.JSON(http.StatusOK, response)
 }
 
 func CacheProdukGambar() {
