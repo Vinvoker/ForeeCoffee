@@ -3,6 +3,7 @@ package main
 import (
 	"foreecoffee/controllers"
 	"log"
+	"net/http/httptest"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +11,7 @@ import (
 )
 
 func main() {
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	err := godotenv.Load()
 	if err != nil {
@@ -64,7 +66,9 @@ func main() {
 	productBranchRoutes.PUT("/:branchName", controllers.AuthMiddleware("ADMIN"), controllers.UpdateMenuBranch)
 	productBranchRoutes.DELETE("/:branchName", controllers.AuthMiddleware("ADMIN"), controllers.DeleteMenuBranch)
 
-	controllers.StartCRON(nil)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	controllers.StartCRON(c)
 
 	if err := router.Run(":" + port); err != nil {
 		panic(err)
