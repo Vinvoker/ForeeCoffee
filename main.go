@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	err := godotenv.Load()
 	if err != nil {
