@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -46,7 +45,6 @@ func UpdateCustomerProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 
 	if oldUsername != newUsername {
-		fmt.Println("change token!!")
 		generateToken(c, activeUserId, newUsername, "CUSTOMER")
 	}
 }
@@ -74,7 +72,6 @@ func UpdateCustomerPassword(c *gin.Context) {
 	var oldPasswordFromDb string
 	errGetRealOldPass := db.QueryRow("SELECT `password` FROM `users` WHERE id=?", activeUserId).Scan(&oldPasswordFromDb)
 	if errGetRealOldPass != nil {
-		fmt.Println(errGetRealOldPass)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
