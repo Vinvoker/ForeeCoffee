@@ -64,6 +64,8 @@ func main() {
 	productBranchRoutes.PUT("/:branchName", controllers.AuthMiddleware("ADMIN"), controllers.UpdateMenuBranch)
 	productBranchRoutes.DELETE("/:branchName", controllers.AuthMiddleware("ADMIN"), controllers.DeleteMenuBranch)
 
+	controllers.StartCRON(nil)
+
 	if err := router.Run(":" + port); err != nil {
 		panic(err)
 	}
